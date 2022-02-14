@@ -4,6 +4,7 @@ const File           = require('fs');
 const Path           = require('path');
 const Matcher        = require('./matcher');
 const jsStringEscape = require('js-string-escape');
+const { EOL }        = require('os');
 
 const NEW_RESPONSE_FORMAT = /HTTP\/(\d\.\d)\s+(\d{3})\s*(.*)/;
 const OLD_RESPONSE_FORMAT = /(\d{3})\s+HTTP\/(\d\.\d)/;
@@ -53,7 +54,7 @@ function parseRequest(filename, request, requestHeaders) {
   }
 
   assert(request, `${filename} missing request section`);
-  const [ methodAndPath, ...headerLines ] = request.split(/\n/);
+  const [ methodAndPath, ...headerLines ] = request.split(EOL);
   let method;
   let path;
   let rawRegexp;
@@ -81,7 +82,7 @@ function parseRequest(filename, request, requestHeaders) {
 
 function parseResponse(filename, response, body) {
   if (response) {
-    const [ statusLine, ...headerLines ] = response.split(/\n/);
+    const [ statusLine, ...headerLines ] = response.split(EOL);
     const { version, statusCode, statusMessage } = statusComponents(statusLine)
     const headers         = parseHeaders(filename, headerLines);
     const rawHeaders      = headerLines.reduce(function(raw, header) {
@@ -115,7 +116,7 @@ function isResponseFormatNew(statusLine) {
 
 function readAndInitialParseFile(filename) {
   const buffer  = File.readFileSync(filename);
-  const parts   = buffer.toString('utf8').split('\n\n');
+  const parts   = buffer.toString('utf8').split(`${EOL}${EOL}`);
   if (parts.length > 2) {
     const parts0  = new Buffer(parts[0], 'utf8');
     const parts1  = new Buffer(parts[1], 'utf8');
@@ -136,9 +137,9 @@ function writeHeaders(file, headers, only = null) {
       continue;
     if (Array.isArray(value))
       for (let item of value)
-        file.write(`${name}: ${item}\n`);
+        file.write(`${name}: ${item}${EOL}`);
     else
-      file.write(`${name}: ${value}\n`);
+      file.write(`${name}: ${value}${EOL}`);
   }
 }
 
@@ -226,7 +227,7 @@ module.exports = class Catalog {
     const filename = `${pathname}/${uid}`;
     try {
       const file = File.createWriteStream(tmpfile, { encoding: 'utf-8' });
-      file.write(`${request.method.toUpperCase()} ${request.url.path || '/'}\n`);
+      file.write(`${request.method.toUpperCase()} ${request.url.path || '/'}${EOL}`);
       writeHeaders(file, request.headers, requestHeaders);
       if (request.body) {
         let body = '';
@@ -234,11 +235,11 @@ module.exports = class Catalog {
           body += chunks[0];
         writeHeaders(file, { body: jsStringEscape(body) });
       }
-      file.write('\n');
+      file.write(EOL);
       // Response part
-      file.write(`HTTP/${response.version || '1.1'} ${response.statusCode || 200} ${response.statusMessage}\n`);
+      file.write(`HTTP/${response.version || '1.1'} ${response.statusCode || 200} ${response.statusMessage}${EOL}`);
       writeHeaders(file, response.headers);
-      file.write('\n');
+      file.write(EOL);
       for (let part of response.body)
         file.write(part[0], part[1]);
       file.end(function() {

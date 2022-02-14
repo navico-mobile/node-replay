@@ -1,4 +1,5 @@
 const {  setup, HTTP_PORT, HTTPS_PORT, INACTIVE_PORT, CORRUPT_PORT } = require('./helpers');
+const jsStringEscape = require('js-string-escape');
 const assert  = require('assert');
 const File    = require('fs');
 const HTTP    = require('http');
@@ -6,6 +7,7 @@ const HTTPS   = require('https');
 const Async   = require('async');
 const Request = require('request');
 const Replay  = require('../src');
+const { EOL } = require('os');
 
 
 // Test replaying results from fixtures in spec/fixtures.
@@ -278,7 +280,7 @@ describe('Replay', function() {
 
       it('should match to response in original catalog', function() {
         assert.equal(response.headers.date, 'Tue, 29 Nov 2011 03:12:15 GMT');
-        assert.equal(response.body, 'Nice and warm\n');
+        assert.equal(response.body, `${EOL}${EOL}Nice and warm${EOL}`);
       });
 
     });
@@ -308,7 +310,7 @@ describe('Replay', function() {
 
       it('should match to response in original catalog', function() {
         assert.equal(response.headers.date, 'Tue, 30 Nov 2011 03:12:15 GMT');
-        assert.equal(response.body, 'Sweet and cold\n');
+        assert.equal(response.body, `${EOL}${EOL}Sweet and cold${EOL}`);
       });
 
       after(function() {
@@ -448,7 +450,7 @@ describe('Replay', function() {
       let setCookieCount = 0;
       const files   = File.readdirSync(fixturesDir);
       const fixture = File.readFileSync(`${fixturesDir}/${files[0]}`, 'utf8');
-      for (let line of fixture.split('\n'))
+      for (let line of fixture.split(EOL))
         if (/set-cookie: c\d=v\d/.test(line))
           setCookieCount++;
       assert.equal(setCookieCount, 2);
@@ -502,7 +504,7 @@ describe('Replay', function() {
         let hasData   = false;
         const files   = File.readdirSync(fixturesDir);
         const fixture = File.readFileSync(`${fixturesDir}/${files[0]}`, 'utf8');
-        for (let line of fixture.split('\n'))
+        for (let line of fixture.split(EOL))
           if (line === 'body: request data')
             hasData = true;
         return hasData;
@@ -592,14 +594,14 @@ describe('Replay', function() {
       }, function(response) {
         response.on('end', done);
       });
-      request.write('line1\nline2\nline3');
+      request.write(`line1${EOL}line2${EOL}line3`);
       request.end();
     });
 
     it('should save POST request data', function() {
       const files   = File.readdirSync(fixturesDir);
       const fixture = File.readFileSync(`${fixturesDir}/${files[0]}`, 'utf8');
-      assert.equal(fixture.split('\n')[1], 'body: line1\\nline2\\nline3');
+      assert.equal(fixture.split(EOL)[1], jsStringEscape(`body: line1${EOL}line2${EOL}line3`));
     });
 
     after(function() {
@@ -649,6 +651,8 @@ describe('Replay', function() {
     });
 
     describe('matching', function() {
+      let response;
+
       before(function(done) {
         const request = HTTP.request({
           hostname: 'example.com',
