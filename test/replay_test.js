@@ -280,7 +280,7 @@ describe('Replay', function() {
 
       it('should match to response in original catalog', function() {
         assert.equal(response.headers.date, 'Tue, 29 Nov 2011 03:12:15 GMT');
-        assert.equal(response.body.trim(), `Nice and warm`);
+        assert.equal(response.body.trim(), 'Nice and warm');
       });
 
     });
@@ -310,7 +310,7 @@ describe('Replay', function() {
 
       it('should match to response in original catalog', function() {
         assert.equal(response.headers.date, 'Tue, 30 Nov 2011 03:12:15 GMT');
-        assert.equal(response.body.trim(), `Sweet and cold`);
+        assert.equal(response.body.trim(), 'Sweet and cold');
       });
 
       after(function() {
