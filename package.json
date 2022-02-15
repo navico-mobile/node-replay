@@ -19,7 +19,7 @@
     "vcr",
     "api"
   ],
-  "main": "./lib/index.js",
+  "main": "/lib/index.js",
   "scripts": {
     "build": "gulp build",
     "test": "mocha",
